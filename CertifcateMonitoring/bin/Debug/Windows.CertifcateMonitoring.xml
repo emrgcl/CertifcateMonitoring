@@ -3,7 +3,7 @@
   <Manifest>
     <Identity>
       <ID>Windows.CertifcateMonitoring</ID>
-      <Version>1.0.0.1</Version>
+      <Version>1.0.0.2</Version>
     </Identity>
     <Name>Windows.CertifcateMonitoring</Name>
     <References>
@@ -27,7 +27,7 @@
           <Property ID="Path" Key="false" Type="string" />
           <Property ID="ExpireDate" Key="false" Type="datetime" />
           <Property ID="IssuerName" Key="false" Type="string" />
-          <Property ID="HasPrivateKey" Key="false" Type="bool" />
+          <Property ID="HasPrivateKey" Key="false" Type="string" />
           <Property ID="DnsNameList" Key="false" Type="string" />
           <Property ID="NetbiosComputerName" Key="false" Type="string" />
           <Property ID="SignatureAlgorithm" Key="false" Type="string" />
@@ -105,7 +105,7 @@ Foreach ($Certifcate in $Certificates) {
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/Path$", $Certificate.Path)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/ExpireDate$", $Certificate.DaysToExpire)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/IssuerName$", $Certificate.IssuerName)
-    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/HasPrivateKey$", $Certificate.HasPrivateKey)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/HasPrivateKey$", ($Certificate.HasPrivateKey).ToString())
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/DnsNameList$", $Certificate.DnsNameList)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/NetbiosComputerName$", $Certificate.NetbiosComputerName)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/SignatureAlgorithm$", $Certificate.SignatureAlgorithm)

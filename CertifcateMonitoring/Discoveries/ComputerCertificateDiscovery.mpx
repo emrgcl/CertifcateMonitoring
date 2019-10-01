@@ -61,7 +61,7 @@ Foreach ($Certifcate in $Certificates) {
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/Path$", $Certificate.Path)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/ExpireDate$", $Certificate.DaysToExpire)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/IssuerName$", $Certificate.IssuerName)
-    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/HasPrivateKey$", $Certificate.HasPrivateKey)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/HasPrivateKey$", ($Certificate.HasPrivateKey).ToString())
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/DnsNameList$", $Certificate.DnsNameList)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/NetbiosComputerName$", $Certificate.NetbiosComputerName)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/SignatureAlgorithm$", $Certificate.SignatureAlgorithm)
