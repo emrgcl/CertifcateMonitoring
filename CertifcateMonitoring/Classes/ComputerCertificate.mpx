@@ -1,0 +1,58 @@
+﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <TypeDefinitions>
+    <EntityTypes>
+      <ClassTypes>
+        
+        <!-- In this section, modify the attributes based on your needs. Ensure the
+             Base attribute matches the application you are modeling.
+             More information can be found in the Management Pack Development Kit: 
+             http://msdn.microsoft.com/en-us/library/ee533867.aspx -->
+        <ClassType ID="Windows.CertifcateMonitoring.Class.ComputerCertificate" Base="Windows!Microsoft.Windows.ApplicationComponent" Accessibility="Public" Abstract="false" Hosted="true" Singleton="false">
+          <Property ID="Thumbprint" Key="true" Type="string" />
+          <Property ID="Path" Key="false" Type="string" />
+          <Property ID="ExpireDate" Key="false" Type="datetime"/>
+          <Property ID="IssuerName" Key="false" Type="string" />
+          <Property ID="HasPrivateKey" Key="false" Type="bool" />
+          <Property ID="DnsNameList" Key="false" Type="string" />
+          <Property ID="NetbiosComputerName" Key="false" Type="string" />
+          <Property ID="SignatureAlgorithm" Key="false" Type="string" />
+          <Property ID="CertificateTemplateName" Key="false" Type="string" />
+          <Property ID="SubjectAlternativeName" Key="false" Type="string" />
+        </ClassType>
+      
+      </ClassTypes>
+      <RelationshipTypes>
+          <RelationshipType ID="Windows.CertifcateMonitoring.RelationShip.ComputerHostsComputerCertificate" Accessibility="Public" Abstract="false" Base="System!System.Hosting">
+          <Source ID ="Computer" Type="Windows!Microsoft.Windows.Computer"/>
+          <Target ID ="ComputerCertificate" Type="Windows.CertifcateMonitoring.Class.ComputerCertificate" />
+      </RelationshipType>
+
+      </RelationshipTypes>
+    </EntityTypes>
+  </TypeDefinitions>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        
+        <!-- This is the string users of the Operations Console and Web Console will see. 
+             Descriptions are also helpful when the user is doing a search in the Console. -->
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate">
+          <Name>Computer Certificate</Name>
+          <Description>Computer Certificate</Description>
+        </DisplayString>
+
+        <!-- Uncomment the below section if you need to add a user friendly string for each property. -->
+        <!--
+        <DisplayString ElementID="Windows.CertifcateMonitoring.ComputerCertificate" SubElementID="Property1">
+          <Name>Property1 Property</Name>
+          <Description></Description>
+        </DisplayString>
+        -->
+        <DisplayString ElementID="Windows.CertifcateMonitoring.RelationShip.ComputerHostsComputerCertificate">
+          <Name>Computer Hosts Computer Certificate</Name>
+          <Description>Computer Hosts Computer Certificate</Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPackFragment>

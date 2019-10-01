@@ -1,0 +1,111 @@
+﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Monitoring>
+    <Discoveries>
+  <Discovery ID="Windows.CertifcateMonitoring.Discovery.ComputerCertificate" Enabled="false" Target="Windows!Microsoft.Windows.Computer" ConfirmDelivery="false" Remotable="true" Priority="Normal">
+    <Category>Discovery</Category>
+    <DiscoveryTypes>
+      <DiscoveryClass TypeID="Windows.CertifcateMonitoring.Class.ComputerCertificate" />
+    </DiscoveryTypes>
+    <DataSource ID="DS" TypeID="Windows!Microsoft.Windows.TimedPowerShell.DiscoveryProvider">
+      <IntervalSeconds>86400</IntervalSeconds>
+      <SyncTime />
+      <ScriptName>ComputerCertificateDiscovery.ps1</ScriptName>
+      <ScriptBody>
+        <![CDATA[
+
+param($sourceId, $managedEntityId, $PrincipalName)
+
+#Constants used for event logging
+$SCRIPT_NAME = 'ComputerCertificateDiscovery.ps1'
+$EVENT_LEVEL_ERROR = 1
+$EVENT_LEVEL_WARNING = 2
+$EVENT_LEVEL_INFO = 4
+$SCRIPT_STARTED = 811
+$CLASS_CREATED = 812
+$SCRIPT_ENDED = 815
+$debug = $true
+#==================================================================================
+# Sub:                   LogDebugEvent
+# Purpose:          Logs an informational event to the Operations Manager event log
+#                                             only if Debug argument is true
+#==================================================================================
+function Log-DebugEvent {
+    param($eventNo, $message)
+
+    $message = "`n" + $message
+    if ($debug = $true) {
+        $api.LogScriptEvent($SCRIPT_NAME, $eventNo, $EVENT_LEVEL_INFO, $message)
+    }
+}
+$api = New-Object -comObject 'MOM.ScriptAPI'
+
+#Log a message that script is starting only if Debug argument is True
+$message = 'Script started' + "`n" + `
+    'Source ID: ' + $sourceId + "`n" + `
+    'Managed Entity ID: ' + $managedEntityId + "`n" + `
+    'Computer Name: ' + $PrincipalName
+Log-DebugEvent -eventNo $SCRIPT_STARTED -message $message
+
+$Certificates = Get-ChildItem -Path Cert:\LocalMachine\My | Select-Object -Property Thumbprint, @{Name = 'Path'; Expression = { "$(($_.PSParentPath  -split '\:\:')[1])\$($_.Thumbprint)" }
+}, @{Name = 'DaysToExpire'; Expression = { ($_.NotAfter) } }, @{Name = 'IssuerName'; Expression = { $_.IssuerName.Name } }, HasPrivateKey, DnsNameList, @{Name = 'NetbiosComputerName'; Expression = { $env:COMPUTERNAME } }, @{Name = 'SignatureAlgorithm'; Expression = { $_.SignatureAlgorithm.FriendlyName } }, @{Name = 'Certificate Template Name'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Certificate Template Name' })).Format(0) } }, @{Name = 'Subject Alternative Name'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Subject Alternative Name' })).Format(0) } } 
+
+$discoveryData = $api.CreateDiscoveryData(0, $sourceId, $managedEntityId)
+
+Foreach ($Certifcate in $Certificates) {
+
+    $instance = $discoveryData.CreateClassInstance("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']$")
+
+    $instance.AddProperty("$MPElement[Name='Windows!Microsoft.Windows.Computer']/PrincipalName$", $PrincipalName)
+    $instance.AddProperty("$MPElement[Name='System!System.Entity']/DisplayName$", $Certificate.Thumbprint)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/Thumbprint$", $Certificate.Thumbprint)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/Path$", $Certificate.Path)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/ExpireDate$", $Certificate.DaysToExpire)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/IssuerName$", $Certificate.IssuerName)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/HasPrivateKey$", $Certificate.HasPrivateKey)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/DnsNameList$", $Certificate.DnsNameList)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/NetbiosComputerName$", $Certificate.NetbiosComputerName)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/SignatureAlgorithm$", $Certificate.SignatureAlgorithm)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/CertificateTemplateName$", $Certificate.CertificateTemplateName)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/SubjectAlternativeName$", $Certificate.SubjectAlternativeName)
+    $discoveryData.AddInstance($instance)
+
+}
+
+
+
+$discoveryData
+
+Log-DebugEvent -eventNo $SCRIPT_ENDED -message 'Script ended.'
+
+]]>
+      </ScriptBody>
+      <Parameters>
+        <Parameter>
+          <Name>sourceID</Name>
+          <Value>$MPElement$</Value>
+        </Parameter>
+        <Parameter>
+          <Name>managedEntityID</Name>
+          <Value>$Target/Id$</Value>
+        </Parameter>
+        <Parameter>
+          <Name>PrincipalName</Name>
+          <Value>$Target/Property[Type="Windows!Microsoft.Windows.Computer"]/PrincipalName$</Value>
+        </Parameter>
+      </Parameters>
+      <TimeoutSeconds>30</TimeoutSeconds>
+    </DataSource>
+  </Discovery>
+    </Discoveries>
+  </Monitoring>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Discovery.ComputerCertificate">
+          <Name>Computer Certificate Discovery</Name>
+          <Description>Computer Certificate Discovery</Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPackFragment>

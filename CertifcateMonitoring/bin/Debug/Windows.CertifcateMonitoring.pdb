@@ -1,0 +1,7 @@
+Classes\ComputerCertificate.mpx*Windows.CertifcateMonitoring.Class.ComputerCertificate*10*10*ClassType
+Classes\ComputerCertificate.mpx*Windows.CertifcateMonitoring.RelationShip.ComputerHostsComputerCertificate*25*12*RelationshipType
+Discoveries\ComputerCertificateDiscovery.mpx*Windows.CertifcateMonitoring.Discovery.ComputerCertificate*4*4*Discovery
+Classes\ComputerCertificate.mpx*Windows.CertifcateMonitoring.Class.ComputerCertificate*39*10*DisplayString
+Classes\ComputerCertificate.mpx*Windows.CertifcateMonitoring.RelationShip.ComputerHostsComputerCertificate*51*10*DisplayString
+Discoveries\ComputerCertificateDiscovery.mpx*Windows.CertifcateMonitoring.Discovery.ComputerCertificate*104*10*DisplayString
+ManagementPack.mpx*Windows.CertifcateMonitoring*5*10*DisplayString
