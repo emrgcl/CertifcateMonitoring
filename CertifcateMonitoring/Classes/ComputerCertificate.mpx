@@ -42,12 +42,47 @@
         </DisplayString>
 
         <!-- Uncomment the below section if you need to add a user friendly string for each property. -->
-        <!--
-        <DisplayString ElementID="Windows.CertifcateMonitoring.ComputerCertificate" SubElementID="Property1">
-          <Name>Property1 Property</Name>
-          <Description></Description>
+       
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="Thumbprint">
+          <Name>Thumbprint</Name>
+          <Description>Thumbprint</Description>
         </DisplayString>
-        -->
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="ExpireDate">
+          <Name>ExpireDate</Name>
+          <Description>ExpireDate</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="IssuerName">
+          <Name>IssuerName</Name>
+          <Description>IssuerName</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="HasPrivateKey">
+          <Name>HasPrivateKey</Name>
+          <Description>HasPrivateKey</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="DnsNameList">
+          <Name>DnsNameList</Name>
+          <Description>DnsNameList</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="NetbiosComputerName">
+          <Name>NetbiosComputerName</Name>
+          <Description>NetbiosComputerName</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="SignatureAlgorithm">
+          <Name>SignatureAlgorithm</Name>
+          <Description>SignatureAlgorithm</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="CertificateTemplateName">
+          <Name>CertificateTemplateName</Name>
+          <Description>CertificateTemplateName</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="SubjectAlternativeName">
+          <Name>SubjectAlternativeName</Name>
+          <Description>SubjectAlternativeName</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="Path">
+          <Name>CertificatePath</Name>
+          <Description>CertificatePath</Description>
+        </DisplayString>
         <DisplayString ElementID="Windows.CertifcateMonitoring.RelationShip.ComputerHostsComputerCertificate">
           <Name>Computer Hosts Computer Certificate</Name>
           <Description>Computer Hosts Computer Certificate</Description>

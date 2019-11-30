@@ -3,13 +3,18 @@
   <Manifest>
     <Identity>
       <ID>Windows.CertifcateMonitoring</ID>
-      <Version>1.0.0.2</Version>
+      <Version>1.0.0.29</Version>
     </Identity>
     <Name>Windows.CertifcateMonitoring</Name>
     <References>
       <Reference Alias="Windows">
         <ID>Microsoft.Windows.Library</ID>
         <Version>7.5.8501.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="Health">
+        <ID>System.Health.Library</ID>
+        <Version>7.0.8433.0</Version>
         <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
       </Reference>
       <Reference Alias="System">
@@ -42,6 +47,231 @@
         </RelationshipType>
       </RelationshipTypes>
     </EntityTypes>
+    <ModuleTypes>
+      <DataSourceModuleType ID="Windows.CertifcateMonitoring.DataSource.ComputerCertificatePropertyBag" Accessibility="Public" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="Thumbprint" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+          <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <DataSource ID="Script" TypeID="Windows.CertifcateMonitoring.DataSource.Powershell">
+                <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+                <SyncTime>$Config/SyncTime$</SyncTime>
+                <ScriptName>CertificatesMonitorDataSource.ps1</ScriptName>
+                <ScriptBody>
+                    
+
+$SCRIPT_NAME = 'CertificatesMonitorDataSource.ps1'
+$EVENT_LEVEL_ERROR=1
+$EVENT_LEVEL_WARNING=2
+$EVENT_LEVEL_INFO=4
+$SCRIPT_STARTED = 821
+$MODULE_LOADED = 822
+$PROPERTYBAG_CREATED=823
+$MULTIWORKER=924
+$SCRIPT_ENDED = 830
+$Debug = $true
+
+#==================================================================================
+# Sub:		LogDebugEvent
+# Purpose:	Logs an informational event to the Operations Manager event log 
+#			only if Debug argument is true
+#==================================================================================
+
+function Log-DebugEvent
+{
+param($eventNo,$message)
+$message ="`n" + $message
+if ($debug -eq $true) 
+{
+$api.LogScriptEvent($SCRIPT_NAME,$eventNo,$EVENT_LEVEL_INFO,$message)
+}
+}
+$api=New-Object -ComObject 'Mom.ScriptApi'
+
+$message='Script started'
+Log-DebugEvent $SCRIPT_STARTED $message
+
+$Certificates = Get-ChildItem -Path Cert:\LocalMachine\My | Select-Object -Property Thumbprint, @{Name = 'Path'; Expression = { "$(($_.PSParentPath  -split '\:\:')[1])\$($_.Thumbprint)" }
+}, @{Name = 'ExpiryDate'; Expression = { ($_.NotAfter) } }, @{Name = 'IssuerName'; Expression = { $_.IssuerName.Name } }, HasPrivateKey, DnsNameList, @{Name = 'NetbiosComputerName'; Expression = { $env:COMPUTERNAME } }, @{Name = 'SignatureAlgorithm'; Expression = { $_.SignatureAlgorithm.FriendlyName } }, @{Name = 'CertificateTemplateName'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Certificate Template Name' })).Format(0) } }, @{Name = 'SubjectAlternativeName'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Subject Alternative Name' })).Format(0) } } 
+
+Foreach ($Certificate in $Certificates) {
+
+$DaysToExpire=[Math]::Round((($Certificate.ExpiryDate) - (get-date)).TotalDays,2)    
+
+$bag=$api.CreatePropertyBag()
+$bag.AddValue('Thumbprint',$Certificate.Thumbprint)
+$bag.AddValue('Path',$Certificate.Path)
+$bag.AddValue('CertificateTemplateName',$Certificate.CertificateTemplateName)
+$bag.AddValue('SubjectAlternativeName',$Certificate.SubjectAlternativeName)
+$bag.AddValue('DaysToExpire',$DaysToExpire)
+$bag.AddValue('IssuerName',$Certificate.IssuerName)
+$bag.AddValue('NetbiosComputerName',$Certificate.NetbiosComputerName)
+$bag.AddValue('DnsNameList',$Certificate.DnsNameList.UniCode)
+$bag.AddValue('SignatureAlgorithm',$Certificate.SignatureAlgorithm)
+$bag
+
+#Return each property bag as we create and populate it.
+$message= $Certificate.Thumbprint + ' has ' + $DaysToExpire + ' days to expire.'
+Log-DebugEvent $PROPERTYBAG_CREATED $message
+
+}
+Log-DebugEvent -eventNo $SCRIPT_ENDED -message 'Script ended.'
+
+                  </ScriptBody>
+                <SnapIns />
+                <Parameters />
+                <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>
+              </DataSource>
+              <ConditionDetection ID="FilterThumbprint" TypeID="System!System.ExpressionFilter">
+                <Expression>
+                  <SimpleExpression>
+                    <ValueExpression>
+                      <XPathQuery Type="String">Property[@Name='Thumbprint']</XPathQuery>
+                    </ValueExpression>
+                    <Operator>Equal</Operator>
+                    <ValueExpression>
+                      <Value Type="String">$Config/Thumbprint$</Value>
+                    </ValueExpression>
+                  </SimpleExpression>
+                </Expression>
+              </ConditionDetection>
+            </MemberModules>
+            <Composition>
+              <Node ID="FilterThumbprint">
+                <Node ID="Script" />
+              </Node>
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <OutputType>System!System.PropertyBagData</OutputType>
+      </DataSourceModuleType>
+      <DataSourceModuleType ID="Windows.CertifcateMonitoring.DataSource.Powershell" Accessibility="Public" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="ScriptName" type="NonNullString" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="ScriptBody" type="NonNullString" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="SnapIns" type="SnapInsType" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="0" maxOccurs="1" name="Parameters" type="NamedParametersType" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="0" maxOccurs="1" name="StrictErrorHandling" type="xsd:boolean" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+          <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <DataSource ID="DS1" TypeID="System!System.SimpleScheduler">
+                <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+                <SyncTime>$Config/SyncTime$</SyncTime>
+              </DataSource>
+              <ProbeAction ID="PSScript" TypeID="Windows!Microsoft.Windows.PowerShellPropertyBagProbe">
+                <ScriptName>$Config/ScriptName$</ScriptName>
+                <ScriptBody>$Config/ScriptBody$</ScriptBody>
+                <SnapIns>$Config/SnapIns$</SnapIns>
+                <Parameters>$Config/Parameters$</Parameters>
+                <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>
+                <StrictErrorHandling>$Config/StrictErrorHandling$</StrictErrorHandling>
+              </ProbeAction>
+            </MemberModules>
+            <Composition>
+              <Node ID="PSScript">
+                <Node ID="DS1" />
+              </Node>
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <OutputType>System!System.PropertyBagData</OutputType>
+      </DataSourceModuleType>
+    </ModuleTypes>
+    <MonitorTypes>
+      <UnitMonitorType ID="Windows.CertifcateMonitoring.MonitorType.CertificateExpired" Accessibility="Internal">
+        <MonitorTypeStates>
+          <MonitorTypeState ID="OverErrorThreshold" NoDetection="false" />
+          <MonitorTypeState ID="UnderThreshold" NoDetection="false" />
+        </MonitorTypeStates>
+        <Configuration>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="Thumbprint" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="ErrorThreshold" type="xsd:double" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+          <OverrideableParameter ID="ErrorThreshold" Selector="$Config/ErrorThreshold$" ParameterType="double" />
+          <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
+        </OverrideableParameters>
+        <MonitorImplementation>
+          <MemberModules>
+            <DataSource ID="DS" TypeID="Windows.CertifcateMonitoring.DataSource.ComputerCertificatePropertyBag">
+              <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+              <SyncTime>$Config/SyncTime$</SyncTime>
+              <Thumbprint>$Config/Thumbprint$</Thumbprint>
+              <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>
+            </DataSource>
+            <ConditionDetection ID="FilterUnderThreshold" TypeID="System!System.ExpressionFilter">
+              <Expression>
+                <SimpleExpression>
+                  <ValueExpression>
+                    <XPathQuery Type="Double">Property[@Name='DaysToExpire']</XPathQuery>
+                  </ValueExpression>
+                  <Operator>LessEqual</Operator>
+                  <ValueExpression>
+                    <Value Type="Double">$Config/ErrorThreshold$</Value>
+                  </ValueExpression>
+                </SimpleExpression>
+              </Expression>
+            </ConditionDetection>
+            <ConditionDetection ID="FilterOverErrorThreshold" TypeID="System!System.ExpressionFilter">
+              <Expression>
+                <SimpleExpression>
+                  <ValueExpression>
+                    <XPathQuery Type="Double">Property[@Name='DaysToExpire']</XPathQuery>
+                  </ValueExpression>
+                  <Operator>Greater</Operator>
+                  <ValueExpression>
+                    <Value Type="Double">$Config/ErrorThreshold$</Value>
+                  </ValueExpression>
+                </SimpleExpression>
+              </Expression>
+            </ConditionDetection>
+          </MemberModules>
+          <RegularDetections>
+            <RegularDetection MonitorTypeStateID="OverErrorThreshold">
+              <Node ID="FilterOverErrorThreshold">
+                <Node ID="DS" />
+              </Node>
+            </RegularDetection>
+            <RegularDetection MonitorTypeStateID="UnderThreshold">
+              <Node ID="FilterUnderThreshold">
+                <Node ID="DS" />
+              </Node>
+            </RegularDetection>
+          </RegularDetections>
+        </MonitorImplementation>
+      </UnitMonitorType>
+    </MonitorTypes>
   </TypeDefinitions>
   <Monitoring>
     <Discoveries>
@@ -91,11 +321,11 @@ $message = 'Script started' + "`n" + `
 Log-DebugEvent -eventNo $SCRIPT_STARTED -message $message
 
 $Certificates = Get-ChildItem -Path Cert:\LocalMachine\My | Select-Object -Property Thumbprint, @{Name = 'Path'; Expression = { "$(($_.PSParentPath  -split '\:\:')[1])\$($_.Thumbprint)" }
-}, @{Name = 'DaysToExpire'; Expression = { ($_.NotAfter) } }, @{Name = 'IssuerName'; Expression = { $_.IssuerName.Name } }, HasPrivateKey, DnsNameList, @{Name = 'NetbiosComputerName'; Expression = { $env:COMPUTERNAME } }, @{Name = 'SignatureAlgorithm'; Expression = { $_.SignatureAlgorithm.FriendlyName } }, @{Name = 'Certificate Template Name'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Certificate Template Name' })).Format(0) } }, @{Name = 'Subject Alternative Name'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Subject Alternative Name' })).Format(0) } } 
+}, @{Name = 'DaysToExpire'; Expression = { ($_.NotAfter) } }, @{Name = 'IssuerName'; Expression = { $_.IssuerName.Name } }, HasPrivateKey, DnsNameList, @{Name = 'NetbiosComputerName'; Expression = { $env:COMPUTERNAME } }, @{Name = 'SignatureAlgorithm'; Expression = { $_.SignatureAlgorithm.FriendlyName } }, @{Name = 'CertificateTemplateName'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Certificate Template Name' })).Format(0) } }, @{Name = 'SubjectAlternativeName'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Subject Alternative Name' })).Format(0) } } 
 
 $discoveryData = $api.CreateDiscoveryData(0, $sourceId, $managedEntityId)
 
-Foreach ($Certifcate in $Certificates) {
+Foreach ($Certificate in $Certificates) {
 
     $instance = $discoveryData.CreateClassInstance("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']$")
 
@@ -106,12 +336,17 @@ Foreach ($Certifcate in $Certificates) {
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/ExpireDate$", $Certificate.DaysToExpire)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/IssuerName$", $Certificate.IssuerName)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/HasPrivateKey$", ($Certificate.HasPrivateKey).ToString())
-    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/DnsNameList$", $Certificate.DnsNameList)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/DnsNameList$", $Certificate.DnsNameList.UniCode)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/NetbiosComputerName$", $Certificate.NetbiosComputerName)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/SignatureAlgorithm$", $Certificate.SignatureAlgorithm)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/CertificateTemplateName$", $Certificate.CertificateTemplateName)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/SubjectAlternativeName$", $Certificate.SubjectAlternativeName)
     $discoveryData.AddInstance($instance)
+    
+    #Log a message that script is starting only if Debug argument is True
+    $message = 'Instance Created' + "`n" + 'Thumbprint: ' + $Certificate.Thumbprint + "`n" + 'ExpireDate: ' + ($Certificate.DaysToExpire).ToSTring() + "`n" + 'CertificateTemplateName: ' + $Certificate.CertificateTemplateName
+    Log-DebugEvent -eventNo $CLASS_CREATED -message $message
+    
 
 }
 
@@ -141,13 +376,91 @@ Log-DebugEvent -eventNo $SCRIPT_ENDED -message 'Script ended.'
         </DataSource>
       </Discovery>
     </Discoveries>
+    <Monitors>
+      <UnitMonitor ID="Windows.CertifcateMonitoring.Monitor.CertificateExpired" Accessibility="Public" Enabled="true" Target="Windows.CertifcateMonitoring.Class.ComputerCertificate" ParentMonitorID="Health!System.Health.AvailabilityState" Remotable="true" Priority="Normal" TypeID="Windows.CertifcateMonitoring.MonitorType.CertificateExpired" ConfirmDelivery="true">
+        <Category>Custom</Category>
+        <AlertSettings AlertMessage="Windows.CertifcateMonitoring.Monitor.CertificateExpired_AlertMessageResourceID">
+          <AlertOnState>Error</AlertOnState>
+          <AutoResolve>true</AutoResolve>
+          <AlertPriority>Normal</AlertPriority>
+          <AlertSeverity>Error</AlertSeverity>
+          <AlertParameters>
+            <AlertParameter1>$Data/Context/Property[@Name='Thumbprint']$</AlertParameter1>
+            <AlertParameter2>$Data/Context/Property[@Name='Path']$</AlertParameter2>
+            <AlertParameter3>$Data/Context/Property[@Name='CertificateTemplateName']$</AlertParameter3>
+            <AlertParameter4>$Data/Context/Property[@Name='SubjectAlternativeName']$</AlertParameter4>
+            <AlertParameter5>$Data/Context/Property[@Name='DaysToExpire']$</AlertParameter5>
+            <AlertParameter6>$Data/Context/Property[@Name='IssuerName']$</AlertParameter6>
+            <AlertParameter7>$Data/Context/Property[@Name='NetbiosComputerName']$</AlertParameter7>
+            <AlertParameter8>$Data/Context/Property[@Name='DnsNameList']$</AlertParameter8>
+            <AlertParameter9>$Data/Context/Property[@Name='SignatureAlgorithm']$</AlertParameter9>
+          </AlertParameters>
+        </AlertSettings>
+        <OperationalStates>
+          <OperationalState ID="Healthy" MonitorTypeStateID="OverErrorThreshold" HealthState="Success" />
+          <OperationalState ID="Error" MonitorTypeStateID="UnderThreshold" HealthState="Error" />
+        </OperationalStates>
+        <Configuration>
+          <IntervalSeconds>3600</IntervalSeconds>
+          <SyncTime />
+          <Thumbprint>$Target/Property[Type="Windows.CertifcateMonitoring.Class.ComputerCertificate"]/Thumbprint$</Thumbprint>
+          <ErrorThreshold>7</ErrorThreshold>
+          <TimeoutSeconds>60</TimeoutSeconds>
+        </Configuration>
+      </UnitMonitor>
+    </Monitors>
   </Monitoring>
+  <Presentation>
+    <StringResources>
+      <StringResource ID="Windows.CertifcateMonitoring.Monitor.CertificateExpired_AlertMessageResourceID" />
+    </StringResources>
+  </Presentation>
   <LanguagePacks>
     <LanguagePack ID="ENU" IsDefault="true">
       <DisplayStrings>
         <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate">
           <Name>Computer Certificate</Name>
           <Description>Computer Certificate</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="Thumbprint">
+          <Name>Thumbprint</Name>
+          <Description>Thumbprint</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="ExpireDate">
+          <Name>ExpireDate</Name>
+          <Description>ExpireDate</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="IssuerName">
+          <Name>IssuerName</Name>
+          <Description>IssuerName</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="HasPrivateKey">
+          <Name>HasPrivateKey</Name>
+          <Description>HasPrivateKey</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="DnsNameList">
+          <Name>DnsNameList</Name>
+          <Description>DnsNameList</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="NetbiosComputerName">
+          <Name>NetbiosComputerName</Name>
+          <Description>NetbiosComputerName</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="SignatureAlgorithm">
+          <Name>SignatureAlgorithm</Name>
+          <Description>SignatureAlgorithm</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="CertificateTemplateName">
+          <Name>CertificateTemplateName</Name>
+          <Description>CertificateTemplateName</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="SubjectAlternativeName">
+          <Name>SubjectAlternativeName</Name>
+          <Description>SubjectAlternativeName</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Class.ComputerCertificate" SubElementID="Path">
+          <Name>CertificatePath</Name>
+          <Description>CertificatePath</Description>
         </DisplayString>
         <DisplayString ElementID="Windows.CertifcateMonitoring.RelationShip.ComputerHostsComputerCertificate">
           <Name>Computer Hosts Computer Certificate</Name>
@@ -160,6 +473,38 @@ Log-DebugEvent -eventNo $SCRIPT_ENDED -message 'Script ended.'
         <DisplayString ElementID="Windows.CertifcateMonitoring">
           <Name>Windows.CertifcateMonitoring</Name>
           <Description>Windows CertifcateMonitoring</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.DataSource.ComputerCertificatePropertyBag">
+          <Name>ComputerCertificate PropertyBag DataSource</Name>
+          <Description>ComputerCertificate PropertyBag DataSource</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.DataSource.Powershell">
+          <Name>CertifcateMonitoring Powershell DataSource</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.MonitorType.CertificateExpired">
+          <Name>Computer Certificate Expired MonitorType</Name>
+          <Description>Computer Certificate ExpiredM onitorType</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Monitor.CertificateExpired">
+          <Name>Computer Certificate Expiring</Name>
+          <Description>Computer Certificate is about to expire</Description>
+        </DisplayString>
+        <DisplayString ElementID="Windows.CertifcateMonitoring.Monitor.CertificateExpired_AlertMessageResourceID">
+          <Name>Computer Certificate is about to expire</Name>
+          <Description>
+            The following certificate has {4} days to expire on {6}.
+
+            Thumbprint: {0}
+            Path: {1}
+            CertificateTemplateName: {2}
+            SubjectAlternativeName: {3}
+            DaysToExpire: {4}
+            IssuerName: {5}
+            NetbiosComputerName: {6}
+            DnsNameList: {7}
+            SignatureAlgorithm: {8}
+          </Description>
         </DisplayString>
       </DisplayStrings>
       <KnowledgeArticles></KnowledgeArticles>

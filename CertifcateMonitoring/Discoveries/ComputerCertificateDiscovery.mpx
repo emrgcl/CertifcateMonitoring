@@ -47,11 +47,11 @@ $message = 'Script started' + "`n" + `
 Log-DebugEvent -eventNo $SCRIPT_STARTED -message $message
 
 $Certificates = Get-ChildItem -Path Cert:\LocalMachine\My | Select-Object -Property Thumbprint, @{Name = 'Path'; Expression = { "$(($_.PSParentPath  -split '\:\:')[1])\$($_.Thumbprint)" }
-}, @{Name = 'DaysToExpire'; Expression = { ($_.NotAfter) } }, @{Name = 'IssuerName'; Expression = { $_.IssuerName.Name } }, HasPrivateKey, DnsNameList, @{Name = 'NetbiosComputerName'; Expression = { $env:COMPUTERNAME } }, @{Name = 'SignatureAlgorithm'; Expression = { $_.SignatureAlgorithm.FriendlyName } }, @{Name = 'Certificate Template Name'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Certificate Template Name' })).Format(0) } }, @{Name = 'Subject Alternative Name'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Subject Alternative Name' })).Format(0) } } 
+}, @{Name = 'DaysToExpire'; Expression = { ($_.NotAfter) } }, @{Name = 'IssuerName'; Expression = { $_.IssuerName.Name } }, HasPrivateKey, DnsNameList, @{Name = 'NetbiosComputerName'; Expression = { $env:COMPUTERNAME } }, @{Name = 'SignatureAlgorithm'; Expression = { $_.SignatureAlgorithm.FriendlyName } }, @{Name = 'CertificateTemplateName'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Certificate Template Name' })).Format(0) } }, @{Name = 'SubjectAlternativeName'; Expression = { (($_.Extensions).Where( { $_.Oid.FriendlyName -eq 'Subject Alternative Name' })).Format(0) } } 
 
 $discoveryData = $api.CreateDiscoveryData(0, $sourceId, $managedEntityId)
 
-Foreach ($Certifcate in $Certificates) {
+Foreach ($Certificate in $Certificates) {
 
     $instance = $discoveryData.CreateClassInstance("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']$")
 
@@ -62,12 +62,17 @@ Foreach ($Certifcate in $Certificates) {
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/ExpireDate$", $Certificate.DaysToExpire)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/IssuerName$", $Certificate.IssuerName)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/HasPrivateKey$", ($Certificate.HasPrivateKey).ToString())
-    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/DnsNameList$", $Certificate.DnsNameList)
+    $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/DnsNameList$", $Certificate.DnsNameList.UniCode)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/NetbiosComputerName$", $Certificate.NetbiosComputerName)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/SignatureAlgorithm$", $Certificate.SignatureAlgorithm)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/CertificateTemplateName$", $Certificate.CertificateTemplateName)
     $instance.AddProperty("$MPElement[Name='Windows.CertifcateMonitoring.Class.ComputerCertificate']/SubjectAlternativeName$", $Certificate.SubjectAlternativeName)
     $discoveryData.AddInstance($instance)
+    
+    #Log a message that script is starting only if Debug argument is True
+    $message = 'Instance Created' + "`n" + 'Thumbprint: ' + $Certificate.Thumbprint + "`n" + 'ExpireDate: ' + ($Certificate.DaysToExpire).ToSTring() + "`n" + 'CertificateTemplateName: ' + $Certificate.CertificateTemplateName
+    Log-DebugEvent -eventNo $CLASS_CREATED -message $message
+    
 
 }
 

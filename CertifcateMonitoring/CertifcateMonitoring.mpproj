@@ -5,7 +5,7 @@
     <RootNamespace>Windows.CertifcateMonitoring</RootNamespace>
     <Name>Windows.CertifcateMonitoring</Name>
     <ManagementPackName>Windows.CertifcateMonitoring</ManagementPackName>
-    <Version>1.0.0.0</Version>
+    <Version>1.0.0.10</Version>
     <MpFrameworkVersion>v7.0.2</MpFrameworkVersion>
     <MpFrameworkProfile>OM</MpFrameworkProfile>
     <ProductVersion>1.1.0.0</ProductVersion>
@@ -17,7 +17,7 @@
     <Company>Emre Guclu</Company>
     <Copyright>Copyright (c) Emre Guclu. All rights reserved.</Copyright>
     <DelaySigning>False</DelaySigning>
-    <AssemblyOriginatorKeyFile>C:\Users\emreg\source\repos\CertifcateMonitoring\Key\CertificateMonitoringKey.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>D:\Users\ebolat\Desktop\SCOM\CertifcateMonitoring-master\Key\CertificateMonitoringKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>false</DebugSymbols>
@@ -60,10 +60,21 @@
     <Compile Include="ManagementPack.mpx">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Modules\CertificatesPropertyBagDS.mpx">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Modules\PowerShellDS.mpx">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Monitors\CertificateExpiryMonitor.mpx">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Classes" />
     <Folder Include="Discoveries" />
+    <Folder Include="Monitors" />
+    <Folder Include="Modules" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VSAC\Microsoft.SystemCenter.OperationsManager.targets" />
 </Project>
